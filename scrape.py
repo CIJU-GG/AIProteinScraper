@@ -3,13 +3,16 @@ from selenium.webdriver.chromium.remote_connection import ChromiumRemoteConnecti
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 import os
+from dotenv import load_dotenv
+from pathlib import Path
 
-load_dotenv()
+dotenv_path = Path('sample.env')
+load_dotenv(dotenv_path=dotenv_path)
 
 SBR_WEBDRIVER = os.getenv("SBR_WEBDRIVER")
 
-
 def scrape_website(website):
+    print(f"SBR_WEBDRIVER: {SBR_WEBDRIVER}")
     print("Connecting to Scraping Browser...")
     sbr_connection = ChromiumRemoteConnection(SBR_WEBDRIVER, "goog", "chrome")
     with Remote(sbr_connection, options=ChromeOptions()) as driver:
@@ -27,14 +30,12 @@ def scrape_website(website):
         html = driver.page_source
         return html
 
-
 def extract_body_content(html_content):
     soup = BeautifulSoup(html_content, "html.parser")
     body_content = soup.body
     if body_content:
         return str(body_content)
     return ""
-
 
 def clean_body_content(body_content):
     soup = BeautifulSoup(body_content, "html.parser")
@@ -49,7 +50,6 @@ def clean_body_content(body_content):
     )
 
     return cleaned_content
-
 
 def split_dom_content(dom_content, max_length=6000):
     return [
