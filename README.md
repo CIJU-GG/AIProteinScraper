@@ -5,7 +5,7 @@ AIProteinScraper is a Python-based web scraping tool designed to extract and ana
 ## Features
 
 - Automated web scraping of protein-related information
-- Data parsing and structuring
+- Data parsing and structuring using ollama
 - Easy setup with environment variables
 - Uses Selenium and BeautifulSoup for data extraction
 
