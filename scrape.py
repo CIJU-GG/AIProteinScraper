@@ -12,7 +12,7 @@ import urllib3
 import random
 import time
 
-dotenv_path = Path('sample.env')
+dotenv_path = Path('.env')
 load_dotenv(dotenv_path=dotenv_path)
 
 SBR_WEBDRIVER = os.getenv("SBR_WEBDRIVER")
