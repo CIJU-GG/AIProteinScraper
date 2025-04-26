@@ -1,6 +1,8 @@
 import streamlit as st
 from scrape import (
     scrape_website,
+    scrape_with_urllib3_proxy,
+    scrape_with_requests,
     extract_body_content,
     clean_body_content,
     split_dom_content,
@@ -13,6 +15,12 @@ st.title("AI Web Scraper")
 protein_name = st.text_input("Give Protein name:")
 urls = []
 
+# Add a dropdown to select scraping method
+scraping_method = st.selectbox(
+    "Select Scraping Method",
+    ["Bright Data API", "Azure Proxy (urllib3)", "Azure Proxy (requests)", "Direct Request"]
+)
+
 # Step 1: Scrape dbs for protein information
 if st.button("Scrape Now"):
     if protein_name:
@@ -22,12 +30,24 @@ if st.button("Scrape Now"):
             st.session_state.dom_content = {}
         for url in urls:
             st.write(f"Scraping {url['name']}...")
-            dom_content = scrape_website(url["url"])
-            body_content = extract_body_content(dom_content)
-            cleaned_content = clean_body_content(body_content)
-
-            # Store the DOM content in Streamlit session state
-            st.session_state.dom_content[url['name']] = cleaned_content
+            
+            # Use the selected scraping method
+            if scraping_method == "Bright Data API":
+                dom_content = scrape_website(url["url"])
+            elif scraping_method == "Azure Proxy (urllib3)":
+                dom_content = scrape_with_urllib3_proxy(url["url"])
+            elif scraping_method == "Azure Proxy (requests)":
+                dom_content = scrape_with_requests(url["url"])
+            else:  # Direct Request
+                dom_content = scrape_with_requests(url["url"])  # No proxy used in this case
+                
+            if dom_content:
+                body_content = extract_body_content(dom_content)
+                cleaned_content = clean_body_content(body_content)
+                # Store the DOM content in Streamlit session state
+                st.session_state.dom_content[url['name']] = cleaned_content
+            else:
+                st.error(f"Failed to fetch content from {url['name']}")
 
 # Step 2: Iterate through dbs
 validity_check = {}

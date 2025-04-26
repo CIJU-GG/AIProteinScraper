@@ -5,11 +5,21 @@ from dotenv import load_dotenv
 import os
 from dotenv import load_dotenv
 from pathlib import Path
+# Add imports for alternative methods
+import requests
+from urllib3 import ProxyManager, PoolManager
+import urllib3
+import random
+import time
 
 dotenv_path = Path('sample.env')
 load_dotenv(dotenv_path=dotenv_path)
 
 SBR_WEBDRIVER = os.getenv("SBR_WEBDRIVER")
+# Add environment variables for alternative proxy methods
+AZURE_PROXY_URL = os.getenv("AZURE_PROXY_URL", None)
+PROXY_USERNAME = os.getenv("PROXY_USERNAME", None)
+PROXY_PASSWORD = os.getenv("PROXY_PASSWORD", None)
 
 def scrape_website(website):
     print(f"SBR_WEBDRIVER: {SBR_WEBDRIVER}")
@@ -29,6 +39,87 @@ def scrape_website(website):
         print("Navigated! Scraping page content...")
         html = driver.page_source
         return html
+
+# New alternative methods using different proxy approaches
+
+def scrape_with_urllib3_proxy(website):
+    """
+    Use urllib3's ProxyManager to make requests through a proxy
+    """
+    print(f"Using proxy: {AZURE_PROXY_URL}")
+    if not AZURE_PROXY_URL:
+        print("No proxy URL configured. Using direct connection.")
+        http = PoolManager()
+    else:
+        # Configure proxy with authentication if provided
+        proxy_headers = {}
+        if PROXY_USERNAME and PROXY_PASSWORD:
+            auth = urllib3.util.request.make_headers(
+                proxy_basic_auth=f"{PROXY_USERNAME}:{PROXY_PASSWORD}"
+            )
+            proxy_headers.update(auth)
+        
+        http = ProxyManager(AZURE_PROXY_URL, headers=proxy_headers)
+    
+    try:
+        # Add random user agent to avoid detection
+        user_agents = [
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0'
+        ]
+        headers = {
+            'User-Agent': random.choice(user_agents),
+            'Accept': 'text/html,application/xhtml+xml,application/xml',
+        }
+        
+        response = http.request('GET', website, headers=headers, timeout=30.0)
+        return response.data.decode('utf-8')
+    except Exception as e:
+        print(f"Error fetching {website}: {str(e)}")
+        return None
+
+def scrape_with_requests(website):
+    """
+    Use requests library with proxy support
+    """
+    proxies = {}
+    if AZURE_PROXY_URL:
+        if PROXY_USERNAME and PROXY_PASSWORD:
+            proxy_with_auth = AZURE_PROXY_URL.replace('http://', f'http://{PROXY_USERNAME}:{PROXY_PASSWORD}@')
+            proxies = {
+                "http": proxy_with_auth,
+                "https": proxy_with_auth
+            }
+        else:
+            proxies = {
+                "http": AZURE_PROXY_URL,
+                "https": AZURE_PROXY_URL
+            }
+    
+    try:
+        # Add random delay and user agent to avoid detection
+        time.sleep(random.uniform(1, 3))
+        user_agents = [
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0'
+        ]
+        headers = {
+            'User-Agent': random.choice(user_agents),
+            'Accept': 'text/html,application/xhtml+xml,application/xml',
+        }
+        
+        response = requests.get(
+            website, 
+            proxies=proxies, 
+            headers=headers,
+            timeout=30
+        )
+        return response.text
+    except Exception as e:
+        print(f"Error fetching {website}: {str(e)}")
+        return None
 
 def extract_body_content(html_content):
     soup = BeautifulSoup(html_content, "html.parser")
